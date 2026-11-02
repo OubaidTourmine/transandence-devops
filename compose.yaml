@@ -1,0 +1,73 @@
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: front-end/Dockerfile
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+    depends_on:
+      communication:
+        condition: service_healthy
+      company-jobs:
+        condition: service_healthy
+      hiring:
+        condition: service_healthy
+      identity:
+        condition: service_healthy
+      notification:
+        condition: service_healthy
+
+  communication:
+    build: ./micro-services/communication
+    environment:
+      SERVICE_NAME: communication
+      PORT: 3000
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  company-jobs:
+    build: ./micro-services/company-jobs
+    environment:
+      SERVICE_NAME: company-jobs
+      PORT: 3000
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  hiring:
+    build: ./micro-services/hiring
+    environment:
+      SERVICE_NAME: hiring
+      PORT: 3000
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  identity:
+    build: ./micro-services/identity
+    environment:
+      SERVICE_NAME: identity
+      PORT: 3000
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  notification:
+    build: ./micro-services/notification
+    environment:
+      SERVICE_NAME: notification
+      PORT: 3000
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
