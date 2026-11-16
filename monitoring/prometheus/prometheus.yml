@@ -2,7 +2,35 @@ global:
   scrape_interval: 15s
 
 scrape_configs:
+  - job_name: telegraf
+    static_configs:
+      - targets:
+          - telegraf:9273
+          
   - job_name: prometheus
     static_configs:
       - targets:
           - localhost:9090
+  - job_name: hireflow_http
+    metrics_path: /probe
+
+    params:
+      module: [http_2xx]
+
+    static_configs:
+      - targets:
+          - http://frontend/micro-services/identity/health
+          - http://frontend/micro-services/communication/health
+          - http://frontend/micro-services/company-jobs/health
+          - http://frontend/micro-services/hiring/health
+          - http://frontend/micro-services/notification/health
+
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+
+      - source_labels: [__param_target]
+        target_label: instance
+
+      - target_label: __address__
+        replacement: blackbox:9115
