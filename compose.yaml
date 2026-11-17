@@ -85,8 +85,8 @@ services:
       - "${DOCKER_SOCKET_GID:-0}"
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-hireflow}
-      POSTGRES_MONITOR_PASSWORD: ${POSTGRES_MONITOR_PASSWORD:?Set in .env}
-      REDIS_PASSWORD: ${REDIS_PASSWORD:?Set in .env}
+      POSTGRES_MONITOR_PASSWORD: ${POSTGRES_MONITOR_PASSWORD:?Missing monitoring password}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Missing Redis password}
     volumes:
       - ./monitoring/telegraf/telegraf.conf:/etc/telegraf/telegraf.conf:ro
       - /var/run/docker.sock:/var/run/docker.sock
