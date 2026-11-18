@@ -1,0 +1,43 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+enum WorkMode {
+  REMOTE
+  HYBRID
+  ONSITE
+}
+enum JobStatus {
+  DRAFT
+  PUBLISHED
+  CLOSED
+}
+model Company {
+  id   Int    @id @default(autoincrement())
+  name String
+
+  jobs Job[]
+}
+
+model Job {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String
+  location    String
+  workMode    WorkMode
+  status JobStatus @default(DRAFT)
+
+  companyId Int
+  company   Company @relation(fields: [companyId], references: [id])
+}
