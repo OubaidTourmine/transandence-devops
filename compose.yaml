@@ -32,7 +32,7 @@ services:
     environment:
       SERVICE_NAME: company-jobs
       PORT: 3000
-      DATABASE_URL: "postgresql://khdima_jobs:${COMPANY_DB_PASSWORD}@khdimalinkdb:5432/khdimalink_company_jobs"
+      DATABASE_URL: "postgresql://${COMPANY_DB_USER:-khdima_jobs}:${COMPANY_DB_PASSWORD:?Set COMPANY_DB_PASSWORD}@khdimalinkdb:5432/${COMPANY_DB:-khdimalink_company_jobs}"
     command: sh -c "npx prisma migrate deploy && npx prisma db seed && npm start && npm run seed"
     depends_on:
       khdimalinkdb:
@@ -106,10 +106,15 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-hireflow}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB:-hireflow}
+
+      COMPANY_DB_USER: ${COMPANY_DB_USER:-khdima_jobs}
+      COMPANY_DB_PASSWORD: ${COMPANY_DB_PASSWORD:?Set COMPANY_DB_PASSWORD}
+      COMPANY_DB: ${COMPANY_DB:-khdimalink_company_jobs}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/10-company-db.sh:/docker-entrypoint-initdb.d/10-company-db.sh:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
       interval: 5s
