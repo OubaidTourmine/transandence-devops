@@ -1,2 +1,15 @@
 .env
+.env.*
 !.env.example
+/backups/
+build/
+*.log
+logs/
+*.tmp
+*.temp
+*.swp
+*.swo
+.DS_Store
+.vscode/
+.md
+readme/
