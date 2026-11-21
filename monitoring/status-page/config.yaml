@@ -1,0 +1,46 @@
+ui:
+  title: HireFlow Status
+  header: HireFlow
+  dashboard-heading: Service Status
+  dashboard-subheading: Real-time availability of HireFlow services
+  dark-mode: true
+
+storage:
+  type: sqlite
+  path: /data/gatus.db
+
+endpoints:
+  - name: Identity
+    group: Microservices
+    url: http://frontend/micro-services/identity/health
+    interval: 30s
+    conditions:
+      - "[STATUS] == 200"
+
+  - name: Communication
+    group: Microservices
+    url: http://frontend/micro-services/communication/health
+    interval: 30s
+    conditions:
+      - "[STATUS] == 200"
+
+  - name: Company Jobs
+    group: Microservices
+    url: http://frontend/micro-services/company-jobs/health
+    interval: 30s
+    conditions:
+      - "[STATUS] == 200"
+
+  - name: Hiring
+    group: Microservices
+    url: http://frontend/micro-services/hiring/health
+    interval: 30s
+    conditions:
+      - "[STATUS] == 200"
+
+  - name: Notification
+    group: Microservices
+    url: http://frontend/micro-services/notification/health
+    interval: 30s
+    conditions:
+      - "[STATUS] == 200"

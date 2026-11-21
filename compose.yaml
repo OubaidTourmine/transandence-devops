@@ -38,7 +38,7 @@ services:
       khdimalinkdb:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/api/company-jobs/jobs?limit=1', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"]
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -112,6 +112,12 @@ services:
       COMPANY_DB_USER: ${COMPANY_DB_USER:-khdima_jobs}
       COMPANY_DB_PASSWORD: ${COMPANY_DB_PASSWORD:?Set COMPANY_DB_PASSWORD}
       COMPANY_DB: ${COMPANY_DB:-khdimalink_company_jobs}
+
+      COMMUNICATION_DB_USER: ${COMMUNICATION_DB_USER:-communication}
+      COMMUNICATION_DB_PASSWORD: ${COMMUNICATION_DB_PASSWORD:?Set COMMUNICATION_DB_PASSWORD}
+      COMMUNICATION_DB: ${COMMUNICATION_DB:-khdimalink_communication}
+
+      POSTGRES_MONITOR_PASSWORD: ${POSTGRES_MONITOR_PASSWORD:?Set POSTGRES_MONITOR_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./docker/postgres/10-company-db.sh:/docker-entrypoint-initdb.d/10-company-db.sh:ro
@@ -162,12 +168,67 @@ services:
       GF_USERS_ALLOW_SIGN_UP: "false"
     volumes:
       - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning/alerting:/etc/grafana/provisioning/alerting:ro
       - ./monitoring/grafana/datasources/prometheus.yml:/etc/grafana/provisioning/datasources/prometheus.yml:ro
+      - ./monitoring/grafana/provisioning/dashboards/hireflow.yml:/etc/grafana/provisioning/dashboards/hireflow.yml:ro
+      - ./monitoring/grafana/dashboards-classic:/etc/grafana/dashboards:ro
     depends_on:
       - prometheus
+
+  postgres-backup:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      PGHOST: khdimalinkdb
+      PGUSER: ${POSTGRES_USER:-hireflow}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+    volumes:
+      - ./docker/backups/backup-postgres.sh:/scripts/backup-postgres.sh:ro
+      - ./backups/postgres:/backups
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        while true; do
+          /bin/sh /scripts/backup-postgres.sh ||
+            echo "[POSTGRES BACKUP] Backup failed"
+          sleep 86400
+        done
+    depends_on:
+      khdimalinkdb:
+        condition: service_healthy
+
+  redis-backup:
+    image: redis:7.4-alpine
+    restart: unless-stopped
+    environment:
+      REDISCLI_AUTH: ${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}
+    volumes:
+      - ./docker/backups/backup-redis.sh:/scripts/backup-redis.sh:ro
+      - ./backups/redis:/backups
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        while true; do
+          /bin/sh /scripts/backup-redis.sh ||
+            echo "[REDIS BACKUP] Backup failed"
+          sleep 86400
+        done
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  status-page:
+    image: ghcr.io/twin/gatus:v5.38.0
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3003:8080"
+    volumes:
+      - ./monitoring/status-page/config.yaml:/config/config.yaml:ro
+      - status_page_data:/data
 
 volumes:
   prometheus_data:
   postgres_data:
   redis_data:
   grafana_data:
+  status_page_data:
